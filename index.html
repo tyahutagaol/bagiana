@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Edukasi Tanah dan Keberlangsungan Kehidupan</title>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+
+body{
+height:100vh;
+overflow:hidden;
+display:flex;
+justify-content:center;
+align-items:center;
+background:radial-gradient(circle at center,#090979,#020024,#000);
+color:white;
+}
+
+body::before{
+content:"";
+position:absolute;
+width:200%;
+height:200%;
+background:radial-gradient(circle,#6a11cb33 0%,transparent 60%);
+animation:rotateGalaxy 40s linear infinite;
+}
+@keyframes rotateGalaxy{
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+}
+
+.star{
+position:absolute;
+width:3px;
+height:3px;
+background:white;
+border-radius:50%;
+animation:twinkle 2s infinite alternate;
+}
+@keyframes twinkle{
+from{opacity:0.2;}
+to{opacity:1;}
+}
+
+.shoot{
+position:absolute;
+width:3px;
+height:80px;
+background:linear-gradient(white,transparent);
+transform:rotate(45deg);
+animation:shoot 5s linear infinite;
+opacity:.7;
+}
+@keyframes shoot{
+0%{top:-10%;left:-10%;}
+100%{top:120%;left:120%;}
+}
+
+.planet{
+position:absolute;
+font-size:90px;
+filter:drop-shadow(0 0 20px cyan);
+animation:float 8s ease-in-out infinite;
+}
+.left{left:40px;bottom:20px;}
+.right{right:40px;top:50px;animation-duration:10s;}
+
+@keyframes float{
+0%,100%{transform:translateY(0);}
+50%{transform:translateY(-25px);}
+}
+
+.astronaut{
+position:absolute;
+top:40%;
+left:5%;
+font-size:70px;
+animation:drift 12s linear infinite;
+}
+@keyframes drift{
+0%{left:5%;}
+100%{left:100%;}
+}
+
+.card{
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(15px);
+padding:35px;
+border-radius:25px;
+width:450px;
+text-align:center;
+box-shadow:0 0 40px #8a2be2;
+z-index:10;
+}
+
+.card h2,.card h3{
+color:#fff;
+margin-bottom:15px;
+text-shadow:0 0 10px cyan;
+}
+
+input{
+padding:12px;
+width:100%;
+border-radius:15px;
+border:none;
+margin-bottom:15px;
+outline:none;
+}
+
+button{
+padding:12px 25px;
+border:none;
+border-radius:20px;
+background:linear-gradient(135deg,#8a2be2,#00c6ff);
+color:white;
+font-weight:bold;
+cursor:pointer;
+transition:.3s;
+}
+button:hover{transform:scale(1.05);}
+
+.option{
+background:linear-gradient(135deg,#ff00cc,#3333ff);
+margin:10px;
+padding:14px;
+border-radius:15px;
+cursor:pointer;
+transition:.3s;
+font-weight:600;
+}
+.option:hover{
+transform:scale(1.07);
+box-shadow:0 8px 20px rgba(0,0,0,.3);
+}
+
+.nextBtn{margin-top:15px;display:none;}
+
+.leaderboard{
+position:fixed;
+right:20px;
+top:20px;
+background:rgba(255,255,255,0.1);
+padding:18px;
+border-radius:20px;
+width:220px;
+box-shadow:0 0 25px #8a2be2;
+font-size:14px;
+}
+ol{padding-left:18px;}
+</style>
+</head>
+
+<body>
+
+<div class="planet left">🪐</div>
+<div class="planet right">🌎</div>
+<div class="astronaut">👨‍🚀</div>
+<div class="shoot"></div>
+
+<div class="leaderboard">
+<b>🏆 Galaxy Rank</b>
+<ol id="leaderboardList"></ol>
+</div>
+
+<div class="card" id="loginBox">
+<h2>🌌 A. Peran Tanah dan Organisme Tanah bagi Keberlangsungan Kehidupan.</h2>
+<input id="nama" placeholder="Masukkan Nama Astronot">
+<button onclick="login()">Mulai Misi</button>
+</div>
+
+<div class="card" id="quizBox" style="display:none;">
+<h3 id="question"></h3>
+<div id="options"></div>
+<button class="nextBtn" id="nextBtn" onclick="nextQuestion()">LANJUT ➜</button>
+</div>
+
+<script>
+
+for(let i=0;i<150;i++){
+let star=document.createElement("div");
+star.className="star";
+star.style.top=Math.random()*100+"%";
+star.style.left=Math.random()*100+"%";
+star.style.animationDuration=(1+Math.random()*2)+"s";
+document.body.appendChild(star);
+}
+
+const benar=new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+const salah=new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
+
+const quiz = [
+{
+q: "Sebuah daerah mengalami alih fungsi lahan dari hutan menjadi kawasan beton dan aspal. Beberapa tahun kemudian daerah tersebut sering mengalami banjir. Berdasarkan peran tanah, penyebab utama kondisi tersebut adalah ....",
+o: [
+"Tanah kehilangan warna alaminya",
+"Tanah tidak lagi mampu menyerap dan menyimpan air",
+"Tanah menghasilkan lebih banyak mineral",
+"Tanah menjadi lebih subur"
+],
+a: 1
+},
+{
+q: "Petani menambahkan pupuk organik untuk meningkatkan hasil panen. Hal ini menunjukkan bahwa tanah berperan sebagai ....",
+o: [
+"Penghasil energi cahaya",
+"Tempat berlangsungnya fotosintesis",
+"Penyedia unsur hara bagi tumbuhan",
+"Sumber oksigen utama"
+],
+a: 2
+},
+{
+q: "Jika struktur tanah rusak akibat penambangan liar, dampak paling besar terhadap keberlangsungan kehidupan adalah ....",
+o: [
+"Tanah menjadi lebih keras dan subur",
+"Hilangnya kemampuan tanah sebagai habitat dan penyimpan air",
+"Tanah menghasilkan lebih banyak mikroorganisme",
+"Tanah berubah menjadi batuan beku"
+],
+a: 1
+},
+{
+q: "Tanah memiliki peran penting dalam siklus air. Jika permukaan tanah tertutup semen seluruhnya, maka dampak yang mungkin terjadi adalah ....",
+o: [
+"Infiltrasi meningkat",
+"Cadangan air tanah bertambah",
+"Air hujan tidak meresap sehingga meningkatkan limpasan permukaan",
+"Tanah menjadi lebih kaya humus"
+],
+a: 2
+},
+{
+q: "Lapangan yang sering diinjak tanpa vegetasi menjadi keras dan tandus. Berdasarkan fungsi tanah, hal ini menunjukkan bahwa tanah ....",
+o: [
+"Kehilangan kemampuan menjaga keseimbangan ekosistem",
+"Menghasilkan lebih banyak nutrisi",
+"Menjadi lebih kaya organisme",
+"Meningkatkan daya serap air"
+],
+a: 0
+},
+{
+q: "Cacing tanah membantu menggemburkan tanah dengan membuat liang-liang di dalamnya. Dampak ekologis dari aktivitas tersebut adalah ....",
+o: [
+"Mengurangi jumlah oksigen dalam tanah",
+"Mempermudah penetrasi air dan akar tumbuhan",
+"Membuat tanah lebih padat",
+"Menghambat pertumbuhan tanaman"
+],
+a: 1
+},
+{
+q: "Jika populasi bakteri pengurai dalam tanah menurun akibat pencemaran, maka dampak jangka panjangnya adalah ....",
+o: [
+"Proses pembentukan humus terganggu",
+"Tanah menjadi lebih subur",
+"Tanaman tumbuh lebih cepat",
+"Jumlah mineral meningkat drastis"
+],
+a: 0
+},
+{
+q: "Rayap dan mikroorganisme tanah membantu menguraikan sisa makhluk hidup. Peran ini penting karena ....",
+o: [
+"Mengurangi jumlah tanah",
+"Menghasilkan batuan baru",
+"Mendaur ulang materi organik menjadi unsur hara",
+"Menghentikan siklus karbon"
+],
+a: 2
+},
+{
+q: "Dalam suatu percobaan, tanah yang mengandung banyak organisme menunjukkan pertumbuhan tanaman lebih baik dibanding tanah steril. Analisis yang tepat adalah ....",
+o: [
+"Organisme tanah merusak struktur tanah",
+"Organisme tanah meningkatkan ketersediaan unsur hara",
+"Tanah steril memiliki lebih banyak mineral",
+"Organisme tanah menghambat penyerapan air"
+],
+a: 1
+},
+{
+q: "Jika seluruh organisme tanah di suatu ekosistem hilang, maka keseimbangan lingkungan akan terganggu karena ....",
+o: [
+"Tanah menjadi terlalu lunak",
+"Proses dekomposisi dan daur materi berhenti",
+"Tanah menghasilkan lebih banyak air",
+"Tanah berubah menjadi pasir"
+],
+a: 1
+}
+];
+
+let index=0,pemain="",skor=0,lockAnswer=false;
+
+function login(){
+pemain=nama.value.trim();
+if(!pemain){
+Swal.fire({icon:'warning',title:'Masukkan Nama Astronot 🚀'});
+return;
+}
+loginBox.style.display="none";
+quizBox.style.display="block";
+loadQuestion();
+}
+
+function loadQuestion(){
+lockAnswer=false;
+nextBtn.style.display="none";
+question.innerText=quiz[index].q;
+options.innerHTML="";
+quiz[index].o.forEach((opt,i)=>{
+options.innerHTML+=`<div class="option" onclick="check(this,${i})">${opt}</div>`;
+});
+}
+
+function check(el,i){
+if(lockAnswer) return;
+lockAnswer=true;
+
+let semua=document.querySelectorAll(".option");
+semua.forEach((e,idx)=>{
+if(idx===quiz[index].a) e.style.background="#00ff99";
+});
+
+if(i===quiz[index].a){
+skor+=10;
+benar.play();
+Swal.fire({
+icon:'success',
+title:'🌟 SUPER GALAXY LEGENDARY!',
+text:'Jawaban BENAR! Energi kosmik meningkat!',
+confirmButtonColor:'#00c6ff'
+});
+}else{
+el.style.background="#ff1744";
+salah.play();
+Swal.fire({
+icon:'error',
+title:'☄️ METEOR STRIKE!',
+text:'Jawaban SALAH! Kapal terkena serangan!',
+confirmButtonColor:'#ff1744'
+});
+}
+
+nextBtn.style.display="inline-block";
+}
+
+function nextQuestion(){
+index++;
+if(index<quiz.length){
+loadQuestion();
+}else{
+Swal.fire({
+title:"👑 MISI SELESAI!",
+html:`<h2>${skor} Poin</h2><p>Luar biasa, ${pemain}!</p>`,
+icon:'info',
+confirmButtonText:'Main Lagi 🚀'
+}).then(()=>location.reload());
+}
+}
+</script>
+
+</body>
+</html>
